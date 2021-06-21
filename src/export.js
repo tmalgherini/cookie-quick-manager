@@ -503,18 +503,19 @@ function parseJSONFile(content, firefox_version) {
             let promises = [];
             for (let json_cookie of json_content) {
                 let params = {
-                    url: json_cookie["Host raw"],
-                    name: json_cookie["Name raw"],
-                    value: json_cookie["Content raw"],
-                    path: json_cookie["Path raw"],
-                    httpOnly: (json_cookie["HTTP only raw"] === 'true'),
-                    secure: (json_cookie["Send for raw"] === 'true'),
-                    storeId: (json_cookie["Private raw"]  === 'true') ? 'firefox-private' : 'firefox-default',
+                    url: "https://" + json_cookie["domain"],
+                    name: json_cookie["name"],
+                    value: json_cookie["value"],
+                    path: json_cookie["path"],
+                    httpOnly: (json_cookie["httpOnly"] === 'true'),
+                    secure: (json_cookie["secure"] === 'true'),
+                    //storeId: (json_cookie["Private raw"]  === 'true') ? 'firefox-private' : 'firefox-default',
+                    storeId: 'firefox-default'
                 };
 
                 // -> sameSite attribute is available on Firefox 63+=
-                if (firefox_version >= 63 && json_cookie["SameSite raw"] !== undefined) {
-                    params['sameSite'] = json_cookie["SameSite raw"];
+                if (firefox_version >= 63 && json_cookie["sameSite"] !== undefined) {
+                    params['sameSite'] = json_cookie["sameSite"];
                 }
 
                 if (json_cookie["Store raw"] !== undefined) {
@@ -523,9 +524,9 @@ function parseJSONFile(content, firefox_version) {
 
                 // expirationDate is not provided for session cookies
                 // If omitted, the cookie becomes a session cookie.
-                if (json_cookie["Expires raw"] != "0") {
+                if (json_cookie["expirationDate"] != "0") {
                     // Refuse expired cookies
-                    let expirationDate = parseInt(json_cookie["Expires raw"], 10);
+                    let expirationDate = json_cookie["expirationDate"];
                     if (expirationDate <= ((Date.now() / 1000|0) + 1))
                         continue;
 
@@ -538,6 +539,7 @@ function parseJSONFile(content, firefox_version) {
                     // If it is not a FPI cookie, set empty string ""
                     params['firstPartyDomain'] = (json_cookie["First Party Domain"]) ? json_cookie["First Party Domain"] : "";
                 }
+                console.log(params);
 
                 promises.push(browser.cookies.set(params));
             }
